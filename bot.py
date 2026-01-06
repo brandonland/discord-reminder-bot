@@ -64,15 +64,14 @@ async def send_reminder():
         if now >= time_to_send and now < time_to_send + timedelta(minutes=1):
             channel = client.get_channel(CHANNEL_ID)
             if channel:
-                print(f'Sending reminder...')
                 await channel.send(load_reminder())
 
-@client.tree.command(name="getreminder", description="Get the reminder message (only visible to you)", guild=GUILD_OBJ)
+@client.tree.command(name="seereminder", description="See the reminder message (only visible to you)", guild=GUILD_OBJ)
 async def get_reminder(interaction: discord.Interaction):
     reminder = load_reminder()
     await interaction.response.send_message(reminder, ephemeral=True)
 
-@client.tree.command(name="sayreminder", description="Make the bot say the reminder message (visible to all!)", guild=GUILD_OBJ)
+@client.tree.command(name="postreminder", description="Make the bot say the reminder message (visible to all!)", guild=GUILD_OBJ)
 async def say_reminder(interaction: discord.Interaction):
     reminder = load_reminder()
     await interaction.response.send_message(reminder)
