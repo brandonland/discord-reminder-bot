@@ -16,6 +16,5 @@ For the moment, the reminder interval and time are hardcoded. The reminder time 
 ## Usage
 There are 3 slash commands:
 - `/reminder view`: This command privately echoes back what the reminder is set to. This is only visible to you.
-- `/reminder set <new_reminder>`: Replace <new_reminder> with any text to set the reminder to anything.
-  - For example: `/reminder set hello` will set the reminder to "hello".
+- `/reminder set`: This opens up a text area modal with the current reminder message there for you to edit.
 - `/reminder post`: This command manually forces the bot to write the reminder as a message in the channel. This is visible to everyone.
