@@ -17,11 +17,14 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 GUILD_OBJ = discord.Object(id=GUILD_ID)
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
+REMINDER_PATH = os.path.join(os.path.dirname(__file__), 'reminder.json')
+EXAMPLE_REMINDER_PATH = os.path.join(os.path.dirname(__file__), 'reminder.example.json')
+
 def init_reminder():
-    if not os.path.exists('reminder.json'):
-        with open('reminder.example.json', 'r') as f:
+    if not os.path.exists(REMINDER_PATH):
+        with open(EXAMPLE_REMINDER_PATH, 'r') as f:
             example_data = json.load(f)
-        with open('reminder.json', 'w') as f:
+        with open(REMINDER_PATH, 'w') as f:
             json.dump(example_data, f, indent=4)
 
 def load_reminder():
