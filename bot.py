@@ -17,11 +17,15 @@ GUILD_ID = int(os.getenv("GUILD_ID"))
 GUILD_OBJ = discord.Object(id=GUILD_ID)
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
+# UPLOADS_PATH = os.path.join(os.path.dirpath())
+REMINDER_PATH = os.path.join(os.path.dirname(__file__), 'reminder.json')
+EXAMPLE_REMINDER_PATH = os.path.join(os.path.dirname(__file__), 'reminder.example.json')
+
 def init_reminder():
-    if not os.path.exists('reminder.json'):
-        with open('reminder.example.json', 'r') as f:
+    if not os.path.exists(REMINDER_PATH):
+        with open(EXAMPLE_REMINDER_PATH, 'r') as f:
             example_data = json.load(f)
-        with open('reminder.json', 'w') as f:
+        with open(REMINDER_PATH, 'w') as f:
             json.dump(example_data, f, indent=4)
 
 def load_reminder():
@@ -96,7 +100,7 @@ class ReminderSetModal(BaseModal, title="Set the reminder"):
         embed = discord.Embed(
             title="Reminder updated. The new reminder will appear as:",
             description=self.reminder_msg.value,
-            color=discord.Color.blurple()
+            color=discord.Color.random()
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
         update_reminder(self.reminder_msg.value)
@@ -110,7 +114,9 @@ class ReminderCommandGroup(app_commands.Group):
     @app_commands.command(name="view", description="Privately see the reminder message (only visible to you)")
     async def reminder_view(self, interaction: discord.Interaction):
         reminder = load_reminder()
-        await interaction.response.send_message(reminder, ephemeral=True)
+        file = discord.File("uploads/dvduesday.jpg", filename="dvduesday.jpg")
+        embed = discord.Embed(description=reminder, color=discord.Color.random())
+        await interaction.response.send_message(file=file, embed=embed, ephemeral=True)
 
     @app_commands.command(name="set", description="Set a new reminder message")
     async def reminder_set(self, interaction: discord.Interaction):
@@ -121,9 +127,9 @@ class ReminderCommandGroup(app_commands.Group):
     @app_commands.command(name="post", description="Make the bot send the reminder as a message (⚠️ CAUTION! Visible to all! ⚠️)")
     async def reminder_post(self, interaction: discord.Interaction):
         reminder = load_reminder()
-        # await interaction.response.send_message(reminder)
-        embed = discord.Embed(description=reminder, color=discord.Color.blurple())
-        await interaction.response.send_message(embed=embed)
+        file = discord.File("uploads/dvduesday.jpg", filename="dvduesday.jpg")
+        embed = discord.Embed(description=reminder, color=discord.Color.random())
+        await interaction.response.send_message(file=file, embed=embed) 
 
 
 intents = discord.Intents.default()
@@ -139,6 +145,9 @@ async def send_reminder():
         if now >= time_to_send and now < time_to_send + timedelta(minutes=1): # sends the reminder *within the minute*
             channel = client.get_channel(CHANNEL_ID)
             if channel:
+                reminder = load_reminder()
+                file = discord.File("uploads/dvduesday.jpg", filename="dvduesday.jpg")
+                embed = discord.Embed(description=reminder, color=discord.Color.random())
                 await channel.send(load_reminder())
 
 @send_reminder.after_loop
