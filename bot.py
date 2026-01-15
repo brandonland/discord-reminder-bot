@@ -70,16 +70,12 @@ async def send_reminder(
 
     if not automatic:
         if not followup and ctx is not None:
-            print("not followup and ctx")
             await ctx.respond(embed=embed, file=file, ephemeral=ephemeral)
         elif not followup and inter is not None:
-            print("not followup and inter")
             await inter.respond(embed=embed, file=file, ephemeral=ephemeral)
         elif followup and ctx:
-            print("followup and ctx")
             await ctx.send_followup(embed=embed, file=file, ephemeral=ephemeral)
         elif followup and inter:
-            print("followup and inter")
             await inter.followup.send(embed=embed, file=file, ephemeral=ephemeral)
     elif automatic and channel is not None:
         await channel.send(embed=embed, file=file)
@@ -92,7 +88,7 @@ class ReminderEditModal(discord.ui.DesignerModal):
         elif msg_only:
             print("message only!")
 
-        text_input = discord.ui.Label(
+        self.text_input = discord.ui.Label(
             "Reminder message body",
             discord.ui.TextInput(
                 value=load_reminder(),
@@ -102,40 +98,36 @@ class ReminderEditModal(discord.ui.DesignerModal):
             ),
         )
 
-        image_file = discord.ui.Label(
-            "Upload a banner image (Optional)",
-            discord.ui.FileUpload(
-                max_values=1,
-                required=False,
-            ),
-            description="If you already uploaded an image, ignore this.",
-        )
+        # image_file = discord.ui.Label(
+        #     "Upload a banner image (Optional)",
+        #     discord.ui.FileUpload(
+        #         max_values=1,
+        #         required=False,
+        #     ),
+        #     description="If you already uploaded an image, ignore this.",
+        # )
         super().__init__(
-            text_input,
-            image_file,
+            self.text_input,
+            # image_file,
             *args,
             **kwargs,
         )
 
     async def callback(self, inter: discord.Interaction):
         await inter.response.defer()
-        await inter.followup.send("Reminder Set. Preview below:")
+        await inter.followup.send("Reminder Set. Preview below:", ephemeral=True)
         embed = discord.Embed(
             description=self.children[0].item.value,
             color=discord.Color.random(),
         )
-        attachment = (
-            self.children[1].item.values[0] if self.children[1].item.values else None
-        )
-        if attachment:  # Only save to disk if a file was uploaded
-            await attachment.save(REMINDER_BANNER_PATH_ABS)
-
-        # Preview embed
-        # await inter.followup.send(
-        #     embeds=[embed],
-        #     files=[await attachment.to_file()] if attachment else [],
-        #     ephemeral=True,
+        # attachment = (
+        #     self.children[1].item.values[0] if self.children[1].item.values else None
         # )
+        # if attachment:  # Only save to disk if a file was uploaded
+        #     await attachment.save(REMINDER_BANNER_PATH_ABS)
+
+        # pprint.pprint(self.text_input.item.value)
+        update_reminder(self.text_input.item.value) # Update the reminder stored on disk
         await send_reminder(inter=inter, followup=True, ephemeral=True)
 
 
