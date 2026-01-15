@@ -58,6 +58,9 @@ class Client(commands.Bot):
             print(f'Error occurred while syncing commands: {e}')
             
         send_reminder.start()
+
+        # for testing
+        do_reminder(automatic=True, channel=channel)
     
 class BaseModal(discord.ui.Modal):
     _interaction: discord.Interaction | None = None
@@ -83,7 +86,7 @@ class BaseModal(discord.ui.Modal):
         return self._interaction
 
 
-class ReminderSetModal(BaseModal, title="Set the reminder"):
+class ReminderEditModal(BaseModal, title="Set the reminder"):
     # reminder_title = discord.ui.TextInput(label="Reminder title", placeholder="Enter a message title (optional)", required=False, min_length=1, max_length=2000, style=discord.TextStyle.long)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -107,11 +110,14 @@ class ReminderSetModal(BaseModal, title="Set the reminder"):
         await super().on_submit(interaction)
 
 
-async def do_reminder(inter: discord.Interaction, ephemeral=False):
+async def do_reminder(*, inter: discord.Interaction=None, ephemeral=False, automatic=False, channel=None):
     reminder = load_reminder()
     file = discord.File("uploads/reminder-banner.jpg", filename="reminder-banner.jpg")
     embed = discord.Embed(description=reminder, color=discord.Color.random())
-    await inter.response.send_message(file=file, embed=embed, ephemeral=ephemeral)
+    if not automatic and inter is not None:
+        await inter.response.send_message(file=file, embed=embed, ephemeral=ephemeral)
+    elif automatic and channel is not None:
+        await channel.send(file=file, embed=embed)
     
 
 class ReminderCommandGroup(app_commands.Group):
@@ -124,7 +130,7 @@ class ReminderCommandGroup(app_commands.Group):
 
     @app_commands.command(name="edit", description="Edit a new reminder message")
     async def reminder_edit(self, interaction: discord.Interaction):
-        modal = ReminderSetModal()
+        modal = ReminderEditModal()
         modal.reminder_msg.default = load_reminder()
         await interaction.response.send_modal(modal)
 
@@ -146,10 +152,7 @@ async def send_reminder():
         if now >= time_to_send and now < time_to_send + timedelta(minutes=1): # sends the reminder *within the minute*
             channel = bot.get_channel(CHANNEL_ID)
             if channel:
-                reminder = load_reminder()
-                file = discord.File("uploads/reminder-banner.jpg", filename="reminder-banner.jpg")
-                embed = discord.Embed(description=reminder, color=discord.Color.random())
-                await channel.send(file=file, embed=embed)
+                do_reminder(automatic=True, channel=channel)
 
 @send_reminder.after_loop
 async def after_reminder():
