@@ -176,21 +176,19 @@ async def reminder_post(ctx: discord.ApplicationContext):
 
 # TODO: automatic reminders (migrate to pycord!)
 
-# @tasks.loop(minutes=1) # Check every minute
-# async def send_auto_reminder():
-#     now = datetime.now(timezone.utc)  # Current UTC time
+@tasks.loop(minutes=1) # Check every minute
+async def send_auto_reminder():
+    now = datetime.now(timezone.utc)  # Current UTC time
 
-#     if now.weekday() == 1:  # (0=Monday, 1=Tuesday, ...)
-#         time_to_send = now.replace(hour=17, minute=0, second=0, microsecond=0) # set to 17:00 UTC (noon EST)
-#         if now >= time_to_send and now < time_to_send + timedelta(minutes=1): # sends the reminder *within the minute*
-#             channel = bot.get_channel(CHANNEL_ID)
-#             if channel:
-#                 send_reminder(automatic=True, channel=channel)
+    if now.weekday() == 1:  # (0=Monday, 1=Tuesday, ...)
+        time_to_send = now.replace(hour=17, minute=0, second=0, microsecond=0) # set to 17:00 UTC (noon EST)
+        if now >= time_to_send and now < time_to_send + timedelta(minutes=1): # sends the reminder *within the minute*
+            channel = bot.get_channel(CHANNEL_ID)
+            if channel:
+                print("Sending automatic reminder.")
+                await send_reminder(automatic=True, channel=channel)
+            else:
+                print("Error: channel not found")
 
-# @send_reminder.after_loop
-# async def after_reminder():
-#     print(f"Reminder sent automatically at {datetime.now(timezone.utc)} UTC time.\n\nReminder:\n{load_reminder()}")
-
-# reminder_cmd = ReminderCommandGroup()
-# bot.tree.add_command(reminder_cmd)
+send_auto_reminder.start()
 bot.run(TOKEN)
