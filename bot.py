@@ -28,6 +28,7 @@ bot = commands.Bot(intents=intents)
 reminder = bot.create_group("reminder", "Reminder commands", guild_ids=[GUILD_ID])
 reminder_edit = reminder.subgroup("edit", "Edit reminder", guild_ids=[GUILD_ID])
 
+
 def init_reminder():
     if not os.path.exists(REMINDER_PATH):
         with open(EXAMPLE_REMINDER_PATH, "r") as f:
@@ -120,13 +121,6 @@ class ReminderEditModal(discord.ui.DesignerModal):
             description=self.children[0].item.value,
             color=discord.Color.random(),
         )
-        # attachment = (
-        #     self.children[1].item.values[0] if self.children[1].item.values else None
-        # )
-        # if attachment:  # Only save to disk if a file was uploaded
-        #     await attachment.save(REMINDER_BANNER_PATH_ABS)
-
-        # pprint.pprint(self.text_input.item.value)
         update_reminder(self.text_input.item.value) # Update the reminder stored on disk
         await send_reminder(inter=inter, followup=True, ephemeral=True)
 
@@ -155,15 +149,12 @@ async def reminder_view(ctx: discord.ApplicationContext):
 )
 async def reminder_edit(ctx: discord.ApplicationContext, image: discord.Attachment=None):
     if image:
-        # file = await image.to_file()
         await image.save(REMINDER_BANNER_PATH_ABS)
         await ctx.respond("Image uploaded! Here is a private preview:", ephemeral=True)
         await send_reminder(ctx, followup=True, ephemeral=True)
     else:
         modal = ReminderEditModal(title="Edit the reminder")
         await ctx.send_modal(modal)
-
-
 
 # TODO: have a confirm/prompt modal: "Are you sure you want to...?"
 @reminder.command(
@@ -174,12 +165,9 @@ async def reminder_post(ctx: discord.ApplicationContext):
     await send_reminder(ctx)
 
 
-# TODO: automatic reminders (migrate to pycord!)
-
 @tasks.loop(minutes=1) # Check every minute
 async def send_auto_reminder():
-    now = datetime.now(timezone.utc)  # Current UTC time
-
+    now = datetime.now(timezone.utc)
     if now.weekday() == 1:  # (0=Monday, 1=Tuesday, ...)
         time_to_send = now.replace(hour=17, minute=0, second=0, microsecond=0) # set to 17:00 UTC (noon EST)
         if now >= time_to_send and now < time_to_send + timedelta(minutes=1): # sends the reminder *within the minute*
