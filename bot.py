@@ -9,6 +9,15 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 import pprint
 from markdownify import markdownify
+import requests
+from bs4 import BeautifulSoup
+import re
+
+# from lxml import etree
+from lxml import html
+from lxml.cssselect import CSSSelector
+# from cssselect import Selector
+# from cssselect import HTMLTranslator, SelectorError
 
 import traceback
 
@@ -178,18 +187,43 @@ async def reminder_post(ctx: discord.ApplicationContext):
 async def get_news_source(ctx: discord.AutocompleteContext):
     return NEWS_SOURCES
 
-    
-async def get_news(source: str) -> discord.Embed | None:
-    if source not in NEWS_SOURCES:
-        ctx.send_response(f"Sorry, that news source {source} is unknown to me.")
-        
-    if source == "blu-ray.com":
-        # print(f"title is {title}")
-        # pprint.pprint(f"item 1 is {p.entries[0]}")
-        # print(f"number of items: {len(p.entries)}")
+def scrape_bluray(url: str, t: str="image") -> str | None:
+    """
+    Given the url of the post, returns featured image.
 
-        return get_latest_bluray_news()
+    (blu-ray.com posts usually have two images per news post. Sometimes
+    the image is omitted while the thumbnail remains, so the return value must
+    optionally allow a `None` type, in case no image was found.)
     
+    Pass type="thumb" as an argument to scrape the thumbnail instead. 
+    """
+    
+    response = requests.get(url)
+    tree = html.fromstring(response.content)
+
+    if t == "image":
+        selector = CSSSelector("div > a img:not(.cover)")
+    elif t == "thumb":
+        selector = CSSSelector("img:not(.cover)")
+    else:
+        raise("Error: incorrect type passed to scrape_bluray")
+
+    images = selector(tree)
+    
+    if t == "image":
+        image_sources = [img.get('src') for img in images if img.get('src') and img.get('src').endswith('.jpg')]
+        if image_sources:
+            return image_sources[0]
+        else:
+            return None
+    
+    if t == "thumb":
+        for img in images:
+            src = img.get('src')
+            if "/news/icons" in src:
+                return src
+
+
         
 def get_latest_bluray_news() -> discord.Embed:
     p = feedparser.parse("https://www.blu-ray.com/rss/newsfeed.xml")
@@ -200,6 +234,8 @@ def get_latest_bluray_news() -> discord.Embed:
     # image = entry.image | None
     link = entry.link
     summary = entry.summary
+    img_link = scrape_bluray(link)
+    thumb_link = scrape_bluray(link, "thumb")
 
     embed = discord.Embed(
         title=title,
@@ -207,13 +243,20 @@ def get_latest_bluray_news() -> discord.Embed:
     )
     embed.add_field(name="", value=f"Published: {published}", inline=False)
     embed.add_field(name="", value=desc, inline=False)
-    if "image" in entry:
-        embed.set_image(url=image)
-    else:
-        # TODO: get image via other means
-        pass
+    if img_link:
+        embed.set_image(url=img_link)
+    if thumb_link:
+        embed.set_thumbnail(url=thumb_link)
+
     return embed
+
         
+async def get_news(source: str) -> discord.Embed | None:
+    if source not in NEWS_SOURCES:
+        ctx.send_response(f"Sorry, that news source {source} is unknown to me.")
+        
+    if source == "blu-ray.com":
+        return get_latest_bluray_news()
     
 
 # @bot.group(name="news", invoke_without_command=True, guild_ids=[GUILD_ID])
@@ -244,6 +287,9 @@ async def send_auto_reminder():
             else:
                 print("Error: channel not found")
 
+
+# TODO: Check every hour if a new post to blu-ray.com was posted.
+#       If there is a new post, post it in specified channel.
 
 send_auto_reminder.start()
 bot.run(TOKEN)
