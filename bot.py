@@ -280,7 +280,7 @@ async def generate_news_message() -> str:
     return random.choice(message_options)
     
 async def send_br_news(channel: None):
-    msg = generate_news_message()
+    msg = await generate_news_message()
     url = get_latest_bluray_url()
     embed = get_latest_bluray_news()
     if channel:
